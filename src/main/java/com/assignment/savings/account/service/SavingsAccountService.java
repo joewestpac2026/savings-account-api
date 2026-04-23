@@ -105,7 +105,6 @@ public class SavingsAccountService {
     public SavingsAccountResponse getAccountById(Long id) {
         SavingsAccount account = savingsAccountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        null,
                         "2001",
                         "Savings account not found for id: " + id
                 ));
