@@ -103,7 +103,7 @@ Example not found response:
 ```json
 {
   "responseCode": "2001",
-  "responseDescription": "Savings account not found for id=: 1"
+  "responseDescription": "Savings account not found for id: 191"
 }
 ```
 If the supplied id is not numeric, the service returns a 400 Bad Request response.
@@ -181,6 +181,10 @@ Validation failures and business rule failures are intentionally returned with d
 Some failures are also split into separate response codes where the cause is meaningfully different. For example, invalid `branchCode` format and out-of-range `branchCode` are handled as separate cases.
 
 This keeps failures easier to diagnose and test.
+
+### Service design
+
+The account creation flow is coordinated in the service layer, while narrower responsibilities are separated into supporting components. For example, business rule validation, offensive nickname checks, and response mapping are delegated to dedicated collaborators instead of being kept entirely inside one service class.
 
 ### Audit and logging design
 
