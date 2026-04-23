@@ -23,21 +23,22 @@ public class SavingsAccountService {
 
     private final SavingsAccountRepository savingsAccountRepository;
     private final AccountCreationValidator accountCreationValidator;
+    private final AccountResponseMapper accountResponseMapper;
     private final AccountNumberGenerator accountNumberGenerator;
     private static final String ACCOUNTS_CACHE = "accounts";
     private final AccountCreationAuditRepository accountCreationAuditRepository;
     private static final Logger ACCOUNT_AUDIT_LOGGER = LoggerFactory.getLogger("ACCOUNT_AUDIT");
 
-
-
     public SavingsAccountService(
             SavingsAccountRepository savingsAccountRepository,
             AccountCreationValidator accountCreationValidator,
+            AccountResponseMapper accountResponseMapper,
             AccountNumberGenerator accountNumberGenerator,
             AccountCreationAuditRepository accountCreationAuditRepository
     ) {
         this.savingsAccountRepository = savingsAccountRepository;
         this.accountCreationValidator = accountCreationValidator;
+        this.accountResponseMapper = accountResponseMapper;
         this.accountNumberGenerator = accountNumberGenerator;
         this.accountCreationAuditRepository = accountCreationAuditRepository;
     }
@@ -74,7 +75,7 @@ public class SavingsAccountService {
                         normalizedTransactionReference,
                         request.customerId().trim()
                 )
-                .map(this::toCreateResponse)
+                .map(accountResponseMapper::toCreateResponse)
                 .orElseGet(() -> createNewAccount(request));
 
         audit.markResponse(
@@ -109,7 +110,7 @@ public class SavingsAccountService {
                         "Savings account not found for id: " + id
                 ));
 
-        return toResponse(account);
+        return accountResponseMapper.toLookupResponse(account);
     }
 
     // Keep the service focused on orchestration by delegating account creation
@@ -138,51 +139,6 @@ public class SavingsAccountService {
         );
 
         SavingsAccount savedAccount = savingsAccountRepository.save(account);
-        return toCreateResponse(savedAccount);
-    }
-
-    private SavingsAccountResponse toResponse(SavingsAccount account) {
-        return new SavingsAccountResponse(
-                "0000",
-                "Success",
-                account.getId(),
-                account.getCustomerId(),
-                account.getAccountNumber(),
-                account.getAccountType(),
-                account.getCustomerName(),
-                account.getAccountNickName(),
-                account.getChannelCode(),
-                extractBranchCode(account.getAccountNumber()),
-                account.getCurrency(),
-                account.getCreatedAt(),
-                account.getStatus()
-        );
-    }
-
-    private CreateSavingsAccountResponse toCreateResponse(SavingsAccount account) {
-        return new CreateSavingsAccountResponse(
-                "0000",
-                "Success",
-                account.getId(),
-                account.getCustomerId(),
-                account.getAccountNumber(),
-                account.getAccountType(),
-                account.getCustomerName(),
-                account.getAccountNickName(),
-                account.getChannelCode(),
-                extractBranchCode(account.getAccountNumber()),
-                account.getCurrency(),
-                account.getTransactionReference(),
-                account.getCreatedAt(),
-                account.getStatus()
-        );
-    }
-
-    private String extractBranchCode(String accountNumber) {
-        String[] parts = accountNumber.split("-");
-        if (parts.length != 4) {
-            throw new IllegalStateException("Invalid account number format: " + accountNumber);
-        }
-        return parts[1];
+        return accountResponseMapper.toCreateResponse(savedAccount);
     }
 }
