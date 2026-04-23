@@ -66,6 +66,8 @@ public class AccountCreationValidator {
         );
     }
 
+    // Branch codes are treated as 4-digit numeric values, with 0001-1999
+    // reserved as the supported range for this implementation.
     private void validateBranchCode(String branchCode, String transactionReference) {
         if (!branchCode.matches("\\d{4}")) {
             throw new BusinessRuleViolationException(
@@ -85,6 +87,8 @@ public class AccountCreationValidator {
         }
     }
 
+    // Only three request channels are supported in the current API:
+    // 01 (branch), 02 (online), and 03 (mobile).
     private void validateChannelCode(String channelCode, String transactionReference) {
         if (!channelCode.equals("01") && !channelCode.equals("02") && !channelCode.equals("03")) {
             throw new BusinessRuleViolationException(
@@ -95,6 +99,9 @@ public class AccountCreationValidator {
         }
     }
 
+    // The API currently supports four account type codes defined by this
+    // implementation: 01 (standard savings), 02 (online savings),
+    // 03 (notice savings), and 04 (term savings).
     private void validateAccountType(String accountType, String transactionReference) {
         if (!accountType.equals("01") && !accountType.equals("02")
                 && !accountType.equals("03") && !accountType.equals("04")) {
