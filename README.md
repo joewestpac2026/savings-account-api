@@ -17,7 +17,7 @@ The current implementation also includes:
 - audit persistence for both success and failure flows
 - masked operational logging
 - cached account retrieval
-- database failure handling
+- database failure handling with fail-fast connection timeout settings
 - API contract design
 - PostgreSQL-backed integration testing
 
@@ -181,6 +181,12 @@ Validation failures and business rule failures are intentionally returned with d
 Some failures are also split into separate response codes where the cause is meaningfully different. For example, invalid `branchCode` format and out-of-range `branchCode` are handled as separate cases.
 
 This keeps failures easier to diagnose and test.
+
+### Database timeout design
+
+The main application is configured to fail fast when database connections cannot be established within a short period, instead of waiting for a longer default timeout.
+
+This is supported through datasource timeout settings and PostgreSQL connection parameters so database availability problems surface more quickly and can still be returned through the existing `3001` and `3002` error handling paths.
 
 ### Service design
 

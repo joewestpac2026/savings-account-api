@@ -1,8 +1,10 @@
 spring:
   datasource:
-    url: ${TEST_DB_URL:${DB_URL:jdbc:postgresql://localhost:5432/savings_db}}
+    url: ${TEST_DB_URL:${DB_URL:jdbc:postgresql://localhost:5432/savings_db?connectTimeout=3&socketTimeout=3}}
     username: postgres
     password: 19901114
+    hikari:
+      connection-timeout: 3000
   jpa:
     hibernate:
       ddl-auto: update
