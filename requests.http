@@ -1,0 +1,266 @@
+### 1. Create account - success
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "192456789",
+  "customerName": "Joe Wu",
+  "accountNickName": "New Zealand",
+  "accountType": "01",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-3097"
+}
+
+### 2. Create account - same customer name, different customerId
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "293456789",
+  "customerName": "Joe Wu",
+  "accountNickName": "Family Saver",
+  "accountType": "02",
+  "channelCode": "02",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-3088"
+}
+
+### 3. Create account - same customer, different branch
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "123456789",
+  "customerName": "Joe Wu",
+  "accountNickName": "Notice Fund",
+  "accountType": "03",
+  "channelCode": "03",
+  "branchCode": "1991",
+  "currency": "NZD",
+  "transactionReference": "TXN-3003"
+}
+
+### 4. Create account - different customer, same branch
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "987654321",
+  "customerName": "Amy Lee",
+  "accountNickName": "Term Saver",
+  "accountType": "04",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-3007"
+}
+
+### 5. Create account - idempotent request, first submission
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "333456789",
+  "customerName": "Mia Chen",
+  "accountNickName": "Holiday Fund",
+  "accountType": "01",
+  "channelCode": "02",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-IDEMP-1001"
+}
+
+### 6. Create account - idempotent request, repeated identical submission
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "333456789",
+  "customerName": "Mia Chen",
+  "accountNickName": "Holiday Fund",
+  "accountType": "01",
+  "channelCode": "02",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-IDEMP-1001"
+}
+
+### 7. Create account - invalid nickname
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "444456789",
+  "customerName": "Nina Park",
+  "accountNickName": "HAte saver",
+  "accountType": "01",
+  "channelCode": "02",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-NICK-1001"
+}
+
+### 8. Create account - invalid request body, required field blank
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "",
+  "customerName": "Liam Wu",
+  "accountNickName": "Valid Nick",
+  "accountType": "01",
+  "channelCode": "02",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-VAL-1001"
+}
+
+### 9. Create account - invalid request body, accountType wrong length
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "555456789",
+  "customerName": "Liam Wu",
+  "accountNickName": "Valid Nick",
+  "accountType": "1",
+  "channelCode": "02",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-VAL-1002"
+}
+
+### 10. Create account - invalid branchCode range
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "666456789",
+  "customerName": "Ella Sun",
+  "accountNickName": "Range Check",
+  "accountType": "01",
+  "channelCode": "02",
+  "branchCode": "2000",
+  "currency": "NZD",
+  "transactionReference": "TXN-BRANCH-1001"
+}
+
+### 11. Create account - invalid branchCode format
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "777456789",
+  "customerName": "Noah Lin",
+  "accountNickName": "Format Check",
+  "accountType": "01",
+  "channelCode": "02",
+  "branchCode": "27A8",
+  "currency": "NZD",
+  "transactionReference": "TXN-BRANCH-1002"
+}
+
+### 12. Create account - customer account limit, first account
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "888456789",
+  "customerName": "Olivia Tan",
+  "accountNickName": "Limit Fund 1",
+  "accountType": "01",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-LIMIT-1001"
+}
+
+### 13. Create account - customer account limit, second account
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "888456789",
+  "customerName": "Olivia Tan",
+  "accountNickName": "Limit Fund 2",
+  "accountType": "02",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-LIMIT-1002"
+}
+
+### 14. Create account - customer account limit, third account
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "888456789",
+  "customerName": "Olivia Tan",
+  "accountNickName": "Limit Fund 3",
+  "accountType": "03",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-LIMIT-1003"
+}
+
+### 15. Create account - customer account limit, fourth account
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "888456789",
+  "customerName": "Olivia Tan",
+  "accountNickName": "Limit Fund 4",
+  "accountType": "04",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-LIMIT-1004"
+}
+
+### 16. Create account - customer account limit, fifth account
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "888456789",
+  "customerName": "Olivia Tan",
+  "accountNickName": "Limit Fund 5",
+  "accountType": "01",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-LIMIT-1005"
+}
+
+### 17. Create account - customer account limit, sixth account should fail
+POST http://localhost:8080/api/v1/accounts
+Content-Type: application/json
+
+{
+  "customerId": "888456789",
+  "customerName": "Olivia Tan",
+  "accountNickName": "Limit Fund 6",
+  "accountType": "02",
+  "channelCode": "01",
+  "branchCode": "0278",
+  "currency": "NZD",
+  "transactionReference": "TXN-LIMIT-1006"
+}
+
+### 18. Get savings account by id - success
+GET http://localhost:8080/api/v1/accounts/1
+
+### 19. Get savings account by id - not found
+GET http://localhost:8080/api/v1/accounts/191
+
+### 20. Get savings account by id - invalid id type
+GET http://localhost:8080/api/v1/accounts/abc
+
+### 21. Get savings account by id - empty id path
+GET http://localhost:8080/api/v1/accounts/

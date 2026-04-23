@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: Savings Account API
+  version: 1.0.0
+  description: API for creating and retrieving savings bank accounts
+
+paths:
+  /api/v1/accounts:
+    post:
+      summary: Create a new savings bank account
+      operationId: createSavingsAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSavingsAccountRequest'
+      responses:
+        '201':
+          description: Savings account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsAccountResponse'
+        '400':
+          description: Invalid request
+        '503':
+          description: Database unavailable
+
+  /api/v1/accounts/{id}:
+    get:
+      summary: Get a savings bank account by id
+      operationId: getSavingsAccountById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique account identifier
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Savings account found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsAccountResponse'
+        '404':
+          description: Savings account not found
+        '503':
+          description: Database unavailable
+
+components:
+  schemas:
+    CreateSavingsAccountRequest:
+      type: object
+      required:
+        - customerId
+        - customerName
+        - accountType
+        - channelCode
+        - branchCode
+        - currency
+        - transactionReference
+      properties:
+        customerId:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Unique customer identifier
+        customerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Customer name
+        accountNickName:
+          type: string
+          minLength: 5
+          maxLength: 30
+          description: Optional nickname for the account
+        accountType:
+          type: string
+          description: Account type code. 01 = BONUS_SAVER, 02 = SIMPLE_SAVER, 03 = NOTICE_SAVER, 04 = TERM_DEPOSIT
+          enum:
+            - "01"
+            - "02"
+            - "03"
+            - "04"
+        channelCode:
+          type: string
+          description: Internal channel code. 01 = BRANCH_COUNTER, 02 = INTERNET_BANKING, 03 = MOBILE_BANKING
+          enum:
+            - "01"
+            - "02"
+            - "03"
+        branchCode:
+          type: string
+          minLength: 4
+          maxLength: 4
+          description: Branch code used in account number generation, must be between 0001 and 1999
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO currency code
+          example: NZD
+        transactionReference:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Client-provided transaction reference for idempotency
+
+    SavingsAccountResponse:
+      type: object
+      properties:
+        responseCode:
+          type: string
+          description: Business response code
+          example: "0000"
+        responseDescription:
+          type: string
+          description: Business response description
+          example: Account created successfully
+        id:
+          type: integer
+          format: int64
+          description: Unique account identifier
+        customerId:
+          type: string
+          description: Unique customer identifier
+          example: 123456789
+        accountNumber:
+          type: string
+          description: Auto-generated account number
+        accountType:
+          type: string
+          description: Account type code. 01 = BONUS_SAVER, 02 = SIMPLE_SAVER, 03 = NOTICE_SAVER, 04 = TERM_DEPOSIT
+          enum:
+            - "01"
+            - "02"
+            - "03"
+            - "04"
+        customerName:
+          type: string
+        accountNickName:
+          type: string
+        channelCode:
+          type: string
+          description: Internal channel code. 01 = BRANCH_COUNTER, 02 = INTERNET_BANKING, 03 = MOBILE_BANKING
+          enum:
+            - "01"
+            - "02"
+            - "03"
+        branchCode:
+          type: string
+          description: Branch code used in account number generation
+          example: "0278"
+        currency:
+          type: string
+          description: ISO currency code
+          example: NZD
+        transactionReference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the account was created
+        status:
+          type: string
+          description: Account lifecycle status
+          enum:
+            - ACTIVE
+            - NO_DEBIT
+            - BLOCKED
+            - DORMANT
+            - UNCLAIMED
+            - CLOSED
+            - OVERDRAWN
+
