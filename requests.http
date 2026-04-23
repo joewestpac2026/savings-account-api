@@ -3,7 +3,7 @@ POST http://localhost:8080/api/v1/accounts
 Content-Type: application/json
 
 {
-  "customerId": "192456789",
+  "customerId": "192459789",
   "customerName": "Joe Wu",
   "accountNickName": "New Zealand",
   "accountType": "01",
@@ -108,9 +108,9 @@ POST http://localhost:8080/api/v1/accounts
 Content-Type: application/json
 
 {
-  "customerId": "",
+  "customerId": "123",
   "customerName": "Liam Wu",
-  "accountNickName": "Valid Nick",
+  "accountNickName": "Vali",
   "accountType": "01",
   "channelCode": "02",
   "branchCode": "0278",

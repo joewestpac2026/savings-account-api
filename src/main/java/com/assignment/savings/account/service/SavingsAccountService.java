@@ -3,18 +3,12 @@ package com.assignment.savings.account.service;
 import com.assignment.savings.account.api.CreateSavingsAccountRequest;
 import com.assignment.savings.account.api.SavingsAccountResponse;
 import com.assignment.savings.account.api.CreateSavingsAccountResponse;
-import com.assignment.savings.common.exception.BusinessRuleViolationException;
 import com.assignment.savings.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import com.assignment.savings.common.context.ReqResPayloadBuilder;
 import java.time.OffsetDateTime;
 import com.assignment.savings.account.domain.SavingsAccount;
 import com.assignment.savings.account.domain.SavingsAccountRepository;
-import java.util.Locale;
-import com.assignment.savings.account.domain.OffensiveNickname;
-import com.assignment.savings.account.domain.OffensiveNicknameRepository;
-import java.util.List;
-import org.springframework.util.StringUtils;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import com.assignment.savings.account.domain.AccountCreationAudit;
@@ -28,20 +22,22 @@ import org.slf4j.LoggerFactory;
 public class SavingsAccountService {
 
     private final SavingsAccountRepository savingsAccountRepository;
-    private final OffensiveNicknameRepository offensiveNicknameRepository;
+    private final AccountCreationValidator accountCreationValidator;
     private final AccountNumberGenerator accountNumberGenerator;
     private static final String ACCOUNTS_CACHE = "accounts";
     private final AccountCreationAuditRepository accountCreationAuditRepository;
     private static final Logger ACCOUNT_AUDIT_LOGGER = LoggerFactory.getLogger("ACCOUNT_AUDIT");
 
+
+
     public SavingsAccountService(
             SavingsAccountRepository savingsAccountRepository,
-            OffensiveNicknameRepository offensiveNicknameRepository,
+            AccountCreationValidator accountCreationValidator,
             AccountNumberGenerator accountNumberGenerator,
             AccountCreationAuditRepository accountCreationAuditRepository
     ) {
         this.savingsAccountRepository = savingsAccountRepository;
-        this.offensiveNicknameRepository = offensiveNicknameRepository;
+        this.accountCreationValidator = accountCreationValidator;
         this.accountNumberGenerator = accountNumberGenerator;
         this.accountCreationAuditRepository = accountCreationAuditRepository;
     }
@@ -117,57 +113,26 @@ public class SavingsAccountService {
         return toResponse(account);
     }
 
-    // These validations are based on additional research into how bank account
-    // opening flows are typically constrained in real systems.
+    // Keep the service focused on orchestration by delegating account creation
+    // business rule checks before persisting the new account.
     private CreateSavingsAccountResponse createNewAccount(CreateSavingsAccountRequest request) {
-
-        String normalizedCustomerId = request.customerId().trim();
-        String normalizedTransactionReference = request.transactionReference().trim();
-
-        long existingAccountCount = savingsAccountRepository
-                .countByCustomerId(normalizedCustomerId);
-
-        if (existingAccountCount >= 5) {
-            throw new BusinessRuleViolationException(
-                    normalizedTransactionReference,
-                    "1001",
-                    "A customer cannot create more than 5 accounts"
-            );
-        }
-
-        // Normalise and validate request fields before generating the account
-        String normalizedBranchCode = request.branchCode().trim();
-        validateBranchCode(normalizedBranchCode, normalizedTransactionReference);
-
-        String normalizedChannelCode = request.channelCode().trim();
-        validateChannelCode(normalizedChannelCode, normalizedTransactionReference);
-
-        String normalizedAccountType = request.accountType().trim();
-        validateAccountType(normalizedAccountType, normalizedTransactionReference);
-
-        String normalizedNickName = normalizeNickName(request.accountNickName());
-        if (containsOffensiveNickname(normalizedNickName)) {
-            throw new BusinessRuleViolationException(
-                    normalizedTransactionReference,
-                    "1002",
-                    "accountNickName contains offensive language"
-            );
-        }
+        AccountCreationValidator.ValidatedAccountCreation validated =
+                accountCreationValidator.validate(request);
 
         OffsetDateTime now = OffsetDateTime.now();
 
         SavingsAccount account = new SavingsAccount(
                 accountNumberGenerator.generateForCustomer(
-                        normalizedCustomerId,
-                        normalizedBranchCode
+                        validated.customerId(),
+                        validated.branchCode()
                 ),
-                normalizedCustomerId,
-                request.customerName().trim(),
-                normalizedNickName,
-                normalizedAccountType,
-                normalizedChannelCode,
-                request.currency().trim().toUpperCase(Locale.ROOT),
-                normalizedTransactionReference,
+                validated.customerId(),
+                validated.customerName(),
+                validated.accountNickName(),
+                validated.accountType(),
+                validated.channelCode(),
+                validated.currency(),
+                validated.transactionReference(),
                 now,
                 now,
                 "ACTIVE"
@@ -214,25 +179,6 @@ public class SavingsAccountService {
         );
     }
 
-    private void validateBranchCode(String branchCode, String transactionReference) {
-        if (!branchCode.matches("\\d{4}")) {
-            throw new BusinessRuleViolationException(
-                    transactionReference,
-                    "1003",
-                    "branchCode must be a 4-digit number"
-            );
-        }
-
-        int value = Integer.parseInt(branchCode);
-        if (value < 1 || value > 1999) {
-            throw new BusinessRuleViolationException(
-                    transactionReference,
-                    "1004",
-                    "branchCode must be between 0001 and 1999"
-            );
-        }
-    }
-
     private String extractBranchCode(String accountNumber) {
         String[] parts = accountNumber.split("-");
         if (parts.length != 4) {
@@ -240,45 +186,4 @@ public class SavingsAccountService {
         }
         return parts[1];
     }
-
-    private void validateChannelCode(String channelCode, String transactionReference) {
-        if (!channelCode.equals("01") && !channelCode.equals("02") && !channelCode.equals("03")) {
-            throw new BusinessRuleViolationException(
-                    transactionReference,
-                    "1006",
-                    "channelCode must be one of 01, 02 or 03"
-            );
-        }
-    }
-
-    private void validateAccountType(String accountType, String transactionReference) {
-        if (!accountType.equals("01") && !accountType.equals("02")
-                && !accountType.equals("03") && !accountType.equals("04")) {
-            throw new BusinessRuleViolationException(
-                    transactionReference,
-                    "1008",
-                    "accountType must be one of 01, 02, 03 or 04"
-            );
-        }
-    }
-
-    private String normalizeNickName(String accountNickName) {
-        return StringUtils.hasText(accountNickName) ? accountNickName.trim() : null;
-    }
-
-    private boolean containsOffensiveNickname(String accountNickName) {
-        if (!StringUtils.hasText(accountNickName)) {
-            return false;
-        }
-
-        String normalized = accountNickName.toLowerCase(Locale.ROOT);
-        List<OffensiveNickname> offensiveNicknames = offensiveNicknameRepository.findAll();
-
-        return offensiveNicknames.stream()
-                .map(OffensiveNickname::getValue)
-                .filter(StringUtils::hasText)
-                .map(value -> value.toLowerCase(Locale.ROOT))
-                .anyMatch(normalized::contains);
-    }
-
 }
